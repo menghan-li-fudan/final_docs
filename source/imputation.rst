@@ -23,11 +23,23 @@ To train and validate the model, and used the trained models to conduct predicti
         --cnts_val_name ${cnts_val_name}_seed_${seed}.csv \
         --epochs=150 --device='cuda' --n_states=5
 
-Parameters used:
-  + ``--cnts_train_name``: file name of the training data
-  + ``--cnts_val_name``: file name of the validation data
-  + ``--epochs``: number of epochs when training the model
-  + ``--device``: device used for training, validation and prediction. The use of GPU is strongly recommended.
-  + ``--n_states``: number of states (number of independent models trained, validated and used for prediction)
++ **Input**:
+   + ``embeddings-combined.pickle``: combined gene expression and histology features.
+   + ``cnts_train_seed_1.csv``: training set.
+   + ``cnts_val_seed_1.csv``: validation set.
+   + ``locs.csv``: spot location matrix paired with training and validation set.
+   + ``gene-names.txt``: genes selected for enhancement.
+   + ``radius.txt``: rescaled spot radius.
++ **Parameters**:
+   + ``${prefix}``: directory to the folder containing the image, i.e. ``data/``.
+   + ``--cnts_train_name``: file name of the training data
+   + ``--cnts_val_name``: file name of the validation data
+   + ``--epochs``: number of epochs when training the model
+   + ``--device``: device used for training, validation and prediction. The use of GPU is strongly recommended.
+   + ``--n_states``: number of states (number of independent models trained, validated and used for prediction)
++ **Output**: ``Prediction_val/cnts-super/``: directory containing enhancement results, with each gene saved as ``GENE.pickle``.
 
-Best model would be saved as checkpoint. Prediction results would be saved as ``.pickle`` files under directory ``Prediction_val/cnts-super/``.
+.. image:: /_static/imputation.png
+   :width: 600px
+   :align: center
+   :alt: Imputation

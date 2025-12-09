@@ -7,7 +7,7 @@ spEnhance: A Computational Framework for Trustworthy Super-Resolution Enhancemen
 ===================================================================================================================
 
 spEnhance is a computational framework for trustworthy super-resolution enhancement in spatial omics data. 
-It starts from spot-level spatial transcriptomics (ST) data, paired H&E image and paired or similar single cell reference,
+It starts from spot-level spatial transcriptomics (ST) data, paired H&E image and single cell reference,
 and reconstructs fine-grained, trustworthy super-resolution spatial gene expression. 
 
 Installation

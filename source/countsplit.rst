@@ -15,13 +15,14 @@ follow the same distribution as :math:`Y_{s,g}`, and are conditionally independe
 
 This construction therefore yields statistically independent training and validation sets suitable for unbiased assessment of predictive performance.
 
-To generate training and validation set, run the following code:
-
 .. code-block:: shell
 
-   Rscript generate_count_split.R $prefix $cnts_train_name $cnts_val_name $seed 
+   Rscript generate_count_split.R ${prefix} $cnts_train_name $cnts_val_name $seed 
 
-``$cnts_train_name`` indicates the name of the training set, ``$cnts_val_name`` indicates the name of the validation set.
-``$seed`` should be a positive integar, indicating the random seed used. 
-
-This would result in two files (`cnts_train_1.csv` and `cnts_val_1.csv`) containing the training and validation data, respectively.
++ **Input**: ``cnts.csv``, file containing count matrix of your ST data, with each row representing a spot and each column representing a gene.
++ **Parameters**:
+   + ``${prefix}``: directory to the folder containing the file, i.e. ``data/``.
+   + ``$cnts_train_name``: name of the training set. Default name: ``'cnts_train'``.
+   + ``$cnts_val_name``: name of the validation set. Default name: ``'cnts_val'``.
+   + ``$seed``: random seed use. Default: ``1``.
++ **Output**: ``cnts_train_seed_1.csv`` and ``cnts_val_seed_1.csv``: files containing the training and validation set, respectively.

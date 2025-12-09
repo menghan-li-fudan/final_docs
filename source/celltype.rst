@@ -6,7 +6,7 @@ Single-cell Reference Guided Gene Expression Embedding
 ========================================================
 
 A single-cell reference provides complementary molecular context beyond histology and can improve prediction. 
-Below, we describe how we construct a gene-expression embedding from the single-cell reference.
+Below, we describe how we construct the gene expression embedding from the single-cell reference.
 
 Cell-type deconvolution using RCTD
 ------------------------------------------------------
@@ -20,24 +20,28 @@ where each entry :math:`R_{c,g}` is the mean expression of gene :math:`g` across
 Then we apply ``RCTD`` to deconvolve each spot, yielding :math:`\mathbf{\Pi}=[\pi_{s,c}]\in[0,1]^{S\times C}`, 
 which estimates the fraction of each cell type present in spot :math:`s = 1, \dots, S` (rows summing to one).
 
-To do this, run ``run_rctd.R``:
-
 .. code-block:: shell
 
    Rscript run_rctd.R ${prefix}sc_reference.RDS ${prefix}cnts_train_seed_1.csv ${prefix}locs.csv ${prefix} 4 
 
-Parameters used:
-   + ``${prefix}sc_reference.RDS``: directory to the single cell reference. You can replace it with your own directory.
-   + ``${prefix}cnts_train_seed_1.csv``: directory to the count matrix used for deconvolution.
-   + ``${prefix}cnts_train_seed_1.csv``: directory to the location matrix. It must be paired with the previous count matrix.
-   + ``${prefix}``: directory to save the results.
-   + ``4``: number of cores used.
-
-The output files from this step include:
++ **Input**: 
+   + ``${prefix}sc_reference.RDS``: paired single cell reference. You can replace it with file name of your own. Cell type labels shoule be saved as ``celltype`` in ``metadata``
+   + ``${prefix}cnts_train_seed_1.csv``: count matrix for deconvolution. **Do not use the unsplit data.**
+   + ``${prefix}locs.csv``: spot location matrix paired with the previous count matrix.
++ **Parameters**:
+   + ``${prefix}``: directory to the folder containing the files, i.e. ``data/``.
++ **Output**: 
+   + ``proportion_celltype.csv``: spot deconvolution results, with each row representing a spot and each column representing a cell type (row summing to one).
+   + ``locs_celltype.csv``: spot location matrix paired with ``proportion_celltype.csv``.
    + ``reference.csv``: cell type-by-gene reference matrix calculated using single-cell reference.
-   + ``proportion_celltype.csv``: cell type proportion matrix, containing proportion of each cell type in each spot.
-   + ``locs_celltype.csv``: location of spots, paired with spots in ``proportion_celltype.csv``.
 
+Additionally, obtain cell type names by running:
+
+.. code-block:: shell
+
+   python select_genes.py --n-top=600 ${prefix}"proportion_celltype.csv" ${prefix}"cell-type-names.txt"
+
+Cell type names will be saved into ``cell-type-names.txt``.
 
 Pixel-level cell type prediction
 ------------------------------------------------------
@@ -45,18 +49,21 @@ Pixel-level cell type prediction
 To predict pixel-level cell types, we train a graph convolutional network (GCN) that maps the histology embedding 
 :math:`\mathbf{U}` to pixel-wise probabilities :math:`\mathbf{P} \in[0,1]^{H_1\times W_1\times C}`, using the spot-level deconvolution :math:`\mathbf\Pi` for weak supervision.
 
-First, save cell type names to ``cell-type-names.txt``, with each row being a cell type. Afterwards, run ``impute_slide_celltype.py``:
-
 .. code-block:: shell
 
    python impute_slide_celltype.py ${prefix} --epochs=100 --device='cuda' --n_states=5
 
-Parameters used:
-   + ``${prefix}``: directory to data
-   + ``--epochs``: number of epochs in the training process
-   + ``--device``: device used for training and prediction. The use of GPU is strongly recommended
++ **Input**: 
+   + ``embeddings-hist-merged.pickle``: merged histology features.
+   + ``proportion_celltype.csv``: spot deconvolution results, containing estimated proportion of each cell type in each spot.
+   + ``locs_celltype.csv``: spot location matrix paired with ``proportion_celltype.csv``.
+   + ``cell-type-names.txt``: file containing cell type names.
++ **Parameters**:
+   + ``${prefix}``: directory to the folder containing the files, i.e. ``data/``.
+   + ``--device``: choosing which device to use, either ``cuda`` or ``cpu``. 
    + ``--n_states``: number of states (number of independent models trained, validated and used for prediction)
-We suggest setting ``epochs`` to ``50-150``. Decide this based on cell type prediction and enhancement results.
++ **Output**: 
+   + ``Cell_proportion/``: predicted cell type proportion for each pixel, with each cell type saved in a ``CELL-TYPE.pickle`` file.
 
 The use of GPU is highly recommended.
 
@@ -74,4 +81,23 @@ SVD to obtain the gene feature embedding :math:`\mathbf{V} \in \mathbb{R}^{H_1 \
 
    python assign_reference.py ${prefix} --mode='combined' --normalize='gene-zscore' --dim=256
 
-The result is a pickle file named ``embeddings-combined.pickle``, which combines both gene expression features and histological features from the previous step.
++ **Input**: 
+   + ``Cell_proportion/``: predicted cell type proportion for each pixel.
+   + ``reference.csv``: cell type-by-gene reference matrix calculated using single-cell reference.
++ **Parameters**:
+   + ``${prefix}``: directory to the folder containing the files, i.e. ``data/``.
+   + ``--mode``: two modes of assigning reference gene expression for each cell type are provided.
+      + ``combined``: each pixel's gene expression was estimated by linearly combining cell-type reference profiles using the pixel's predicted cell-type proportions as weights.
+      + ``uncombined``: each pixel's gene expression was estimated as the cell-type reference profiles of the most probable cell type.
+   + ``--normalize``: two modes of normalization offered.
+      + ``gene-zscore``: z-score normalization for each gene across all pixels.
+      + ``celltype``: z-score normalization for all genes in the same cell type.
+   + ``--dim``: number of reduced dimensions of gene expression features.
++ **Output**: 
+   + ``embeddings-gene.pickle``: gene expression embedding.
+   + ``embeddings-combined.pickle``: combined embeddings of both gene expression and histological features.
+
+.. image:: /_static/celltype.png
+   :width: 600px
+   :align: center
+   :alt: Celltype prediction
